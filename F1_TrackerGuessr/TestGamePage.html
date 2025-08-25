@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+    <head>
+
+       <link rel="stylesheet" href="https://pyscript.net/releases/2024.10.1/core.css">
+        <script type="module" src="https://pyscript.net/releases/2024.10.1/core.js"></script>
+        <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+        <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+        <script src="https://cdn.maptiler.com/maptiler-geocoding-control/v2.1.7/leaflet.umd.js"></script>
+        <link href="https://cdn.maptiler.com/maptiler-geocoding-control/v2.1.7/style.css" rel="stylesheet">
+
+        <title> Python Test</title>
+
+       <style>
+    html, body { height: 100%; margin: 0; }
+    #map { height: 100vh; width: 100%; }   /* ← simple, reliable */
+    .hud { position:fixed; top:10px; left:10px; z-index:9999;
+           background:rgba(0,0,0,.6); color:#fff; padding:.4rem .6rem; border-radius:.4rem; }
+  </style>
+        </head>
+        <body>
+
+            <py-script src="F1_Trackr_Game.py?v=4"></py-script>
+
+          
+            <div id="map" style="height:500px; width:100%;"></div>
+
+            <div class="hud">Coords: <span id="coords">—</span></div>
+             <div id="py-output"></div>
+
+            <img id="random-img" src="" alt="Random picture will appear here" width="1000" height="500">
+
+            
+             <h1 id="demo">Loading</h1>
+
+
+
+             <script>
+    let pyFunc = null;
+    let pyPrintLast = null;
+    // grab Python function when PyScript is ready (doesn't block the map)
+    window.addEventListener('pyscript-ready', () => {
+      pyPrintLast = window.pyscript.interpreter.globals.get('print_last_coords');
+      const ps = window.pyscript;
+      if (!ps) { console.error('PyScript core missing'); return; }
+      try {
+        pyFunc = ps.interpreter.globals.get('process_coords');
+        console.log('[ready] got process_coords?', !!pyFunc);
+      } catch (e) {
+        console.error('Could not get process_coords:', e);
+      }
+    });
+
+    // init the map as soon as DOM is ready (don’t wait for PyScript)
+    document.addEventListener('DOMContentLoaded', () => {
+      const map = L.map('map').setView([24.4697, 54.6039], 12);
+
+      L.tileLayer("https://api.maptiler.com/maps/streets-v2/{z}/{x}/{y}.png?key=9iOzS5NRdc1zKB6Vkkp5",{
+                    attribution: '<a href="https://www.maptiler.com/copyright/" target="_blank">&copy; MapTiler</a> <a href="https://www.openstreetmap.org/copyright" target="_blank">&copy; OpenStreetMap contributors</a>',
+                }).addTo(map);
+
+
+      // If you use MapTiler geocoder, uncomment + add your key:
+     
+      const key = '9iOzS5NRdc1zKB6Vkkp5';
+      
+      if (window.maptiler?.Geocoding) {
+        L.control.maptilerGeocoding({ apiKey:key, collapsed:true, language:'en' }).addTo(map);
+      }
+      var marker = L.marker([24.4697, 54.6039]).addTo(map);
+
+      L.control.maptilerGeocoding({
+      apiKey: key,
+      placeholder: "F1 Track",
+      collapsed: true,
+      language: "en"
+      }).addTo(map);
+
+      let currentMarker = null;
+
+      map.on('click', (e) => {
+        if (currentMarker) map.removeLayer(currentMarker);
+        currentMarker = L.marker(e.latlng).addTo(map);
+
+        const lat = e.latlng.lat, lon = e.latlng.lng;
+
+        // show in UI
+        document.getElementById('coords').textContent =
+          `${lat.toFixed(6)}, ${lon.toFixed(6)}`;
+
+        // call Python if ready
+        if (pyFunc) {
+          try { pyFunc(lat, lon); } 
+          catch (err) { console.error('process_coords error:', err); }
+        } else {
+          console.warn('[click] PyScript not ready yet; will work on next clicks once ready');
+        }
+      });
+    });
+
+    pyPrintLast && pyPrintLast();
+  </script>
+
+            
+            
+
+        </body>
+</html>

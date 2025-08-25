@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+    <head>
+
+       <link rel="stylesheet" href="https://pyscript.net/releases/2024.10.1/core.css">
+        <script type="module" src="https://pyscript.net/releases/2024.10.1/core.js"></script>
+        <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+        <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+        <script src="https://cdn.maptiler.com/maptiler-geocoding-control/v2.1.7/leaflet.umd.js"></script>
+        <link href="https://cdn.maptiler.com/maptiler-geocoding-control/v2.1.7/style.css" rel="stylesheet">
+
+        <title> Python Test</title>
+
+        <style>#map {position: absolute; top: -100; bottom: 0; left:0; right:0;}</style>
+        </head>
+        <body>
+            <div id="map" style="height:500px; width:100%;"></div>
+
+            
+             <div id="py-output"></div>
+
+            <img id="random-img" src="" alt="Random picture will appear here" width="1000" height="500">
+
+            
+             <h1 id="demo">Loading</h1>
+
+
+
+             <script type = "module">
+
+                const key = "9iOzS5NRdc1zKB6Vkkp5"
+                var map = L.map('map').setView([0,0],1)
+                L.tileLayer("https://api.maptiler.com/maps/streets-v2/{z}/{x}/{y}.png?key=9iOzS5NRdc1zKB6Vkkp5",{
+                    attribution: '<a href="https://www.maptiler.com/copyright/" target="_blank">&copy; MapTiler</a> <a href="https://www.openstreetmap.org/copyright" target="_blank">&copy; OpenStreetMap contributors</a>',
+                }).addTo(map);
+
+
+                var marker = L.marker([24.4697, 54.6039]).addTo(map);
+
+                L.control.maptilerGeocoding({
+                    apiKey: key,
+                    placeholder: "F1 Track",
+                    collapsed: true,
+                    language: "en"
+                }).addTo(map);
+
+                var currentMarker;
+
+            
+                map.on('click', function(e) {
+                if (currentMarker) {
+                    map.removeLayer(currentMarker);
+                }
+                currentMarker = L.marker(e.latlng).addTo(map);
+
+                // get coords
+                const lat = e.latlng.lat;
+                const lon = e.latlng.lng;
+
+                // call Python function
+                const pyFunc = pyscript.interpreter.globals.get('process_coords');
+                pyFunc(lat, lon);
+
+            });
+            </script>
+
+            <py-script src="F1_Trackr_Game.py"></py-script>
+            
+
+        </body>
+</html>
